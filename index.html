@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مولّد برومبت الفيديو</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8d28a;
+    --dark: #0d0b08;
+    --dark2: #1a1710;
+    --dark3: #242118;
+    --border: rgba(201,168,76,0.25);
+    --text: #f0ead8;
+    --muted: rgba(240,234,216,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Tajawal', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; padding: 24px 16px; }
+  h1 { text-align: center; font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 28px; }
+  .steps { display: flex; gap: 8px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap; }
+  .step { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); background: var(--dark2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; }
+  .step.active { color: var(--gold); border-color: var(--gold); }
+  .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+  .step.active .step-num { background: var(--gold); color: var(--dark); }
+  .card { background: var(--dark2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 0.9rem; font-weight: 700; color: var(--gold); margin-bottom: 14px; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; position: relative; overflow: hidden; }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+  .upload-label { font-size: 0.85rem; color: var(--muted); }
+  .upload-label strong { color: var(--gold); }
+  .preview-wrap { position: relative; border-radius: 10px; overflow: hidden; background: var(--dark3); margin-top: 10px; }
+  .preview-wrap video, .preview-wrap img { width: 100%; display: block; max-height: 200px; object-fit: cover; }
+  .remove-btn { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); border: none; color: #fff; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-family: 'Tajawal', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--dark); }
+  .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 0.85rem; padding: 10px; }
+  .loading { text-align: center; padding: 24px; display: none; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result-section { display: none; }
+  .result-box { background: var(--dark3); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 0.82rem; line-height: 1.7; color: var(--text); white-space: pre-wrap; direction: ltr; text-align: left; max-height: 260px; overflow-y: auto; }
+  .copy-row { display: flex; gap: 8px; margin-top: 10px; }
+  .copy-row .btn-outline { flex: 1; }
+  .sites-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .site-card { background: var(--dark3); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; text-decoration: none; color: var(--text); display: block; }
+  .site-card .site-icon { font-size: 1.5rem; margin-bottom: 4px; }
+  .site-card .site-name { font-size: 0.8rem; font-weight: 700; }
+  .site-card .site-type { font-size: 0.7rem; color: var(--muted); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--gold); color: var(--dark); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; transition: transform 0.3s; z-index: 999; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.75rem; margin: 16px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<h1>✨ مولّد برومبت الفيديو</h1>
+<p class="subtitle">حوّل فيديو المنتج القديم إلى برومبت احترافي لخاتمك الجديد</p>
+<div class="steps">
+  <div class="step active" id="s1"><span class="step-num">1</span> رفع الفيديو</div>
+  <div class="step" id="s2"><span class="step-num">2</span> صورة الخاتم</div>
+  <div class="step" id="s3"><span class="step-num">3</span> البرومبت</div>
+  <div class="step" id="s4"><span class="step-num">4</span> التوليد</div>
+</div>
+<div class="card">
+  <div class="card-title">🎬 الخطوة الأولى: ارفع فيديو المنتج الأصلي</div>
+  <div class="upload-zone" onclick="document.getElementById('vidInput').click()">
+    <input type="file" id="vidInput" accept="video/*,image/*">
+    <div class="upload-icon">📹</div>
+    <div class="upload-label">اضغط هنا لرفع الفيديو<br><strong>أو صورة</strong> من الفيديو</div>
+  </div>
+  <div id="vidPreview"></div>
+</div>
+<div class="card">
+  <div class="card-title">💍 الخطوة الثانية: ارفع صورة خاتمك الجديد</div>
+  <div class="upload-zone" onclick="document.getElementById('imgInput').click()">
+    <input type="file" id="imgInput" accept="image/*">
+    <div class="upload-icon">💍</div>
+    <div class="upload-label">ارفع صورة <strong>الخاتم الجديد</strong></div>
+  </div>
+  <div id="imgPreview"></div>
+</div>
+<button class="btn btn-gold" id="genBtn" onclick="generate()" disabled>✨ استخرج البرومبت الاحترافي</button>
+<div class="loading" id="loadingDiv">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:0.85rem;">Claude يحلل ويكتب البرومبت...</div>
+</div>
+<div class="result-section" id="resultSection">
+  <div class="divider">النتيجة</div>
+  <div class="card">
+    <div class="card-title">📋 التحليل الكامل</div>
+    <div class="result-box" id="analysisBox"></div>
+    <div class="copy-row"><button class="btn btn-outline" onclick="copyText('analysisBox')">📋 نسخ التحليل</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎯 البرومبت الجاهز</div>
+    <div class="result-box" id="promptBox" style="color:#c9e8a0;"></div>
+    <div class="copy-row">
+      <button class="btn btn-outline" onclick="copyText('promptBox')">📋 نسخ انجليزي</button>
+      <button class="btn btn-outline" onclick="copyText('promptBox',true)">📋 نسخ عربي</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚀 مواقع التوليد</div>
+    <div class="sites-grid">
+      <a class="site-card" href="https://runwayml.com" target="_blank"><div class="site-icon">🎬</div><div class="site-name">Runway ML</div><div class="site-type">فيديو AI</div></a>
+      <a class="site-card" href="https://kling.kuaishou.com" target="_blank"><div class="site-icon">🎥</div><div class="site-name">Kling AI</div><div class="site-type">فيديو AI</div></a>
+      <a class="site-card" href="https://midjourney.com" target="_blank"><div class="site-icon">🖼️</div><div class="site-name">Midjourney</div><div class="site-type">صور AI</div></a>
+      <a class="site-card" href="https://app.ideogram.ai" target="_blank"><div class="site-icon">✨</div><div class="site-name">Ideogram</div><div class="site-type">صور AI</div></a>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">✅ تم النسخ!</div>
+<script>
+let vidFile=null,imgFile=null,arabicPrompt='';
+function toBase64(f){return new Promise((r,e)=>{const x=new FileReader();x.onload=()=>r(x.result.split(',')[1]);x.onerror=e;x.readAsDataURL(f);})}
+function setupUpload(iid,pid,isVid){
+  const inp=document.getElementById(iid);
+  inp.addEventListener('change',()=>{if(inp.files[0])handleFile(inp.files[0],pid,isVid);});
+}
+function handleFile(f,pid,isVid){
+  const url=URL.createObjectURL(f);
+  const prev=document.getElementById(pid);
+  if(isVid&&f.type.startsWith('video/')){
+    prev.innerHTML=`<div class="preview-wrap"><video src="${url}" controls muted></video><button class="remove-btn" onclick="clearFile('${pid}','${isVid?'vid':'img'}')">✕</button></div>`;
+    vidFile=f;
+  } else {
+    prev.innerHTML=`<div class="preview-wrap"><img src="${url}"><button class="remove-btn" onclick="clearFile('${pid}','${isVid?'vid':'img'}')">✕</button></div>`;
+    if(isVid)vidFile=f; else imgFile=f;
+  }
+  checkReady();
+}
+function clearFile(pid,which){
+  document.getElementById(pid).innerHTML='';
+  if(which==='vid')vidFile=null; else imgFile=null;
+  checkReady();
+}
+function checkReady(){document.getElementById('genBtn').disabled=!(vidFile&&imgFile);}
+setupUpload('vidInput','vidPreview',true);
+setupUpload('imgInput','imgPreview',false);
+async function generate(){
+  document.getElementById('loadingDiv').style.display='block';
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('resultSection').style.display='none';
+  try{
+    const v=await toBase64(vidFile);
+    const i=await toBase64(imgFile);
+    const vt=vidFile.type.startsWith('video/')?'image/jpeg':(vidFile.type||'image/jpeg');
+    const it=imgFile.type||'image/jpeg';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:vt,data:v}},
+          {type:'image',source:{type:'base64',media_type:it,data:i}},
+          {type:'text',text:`الصورة الأولى: فريم من فيديو منتج خاتم. الصورة الثانية: خاتم جديد أريد استخدامه بدلاً منه.
+
+حلل الصورة الأولى بالتفصيل واكتب برومبت احترافي لتوليد فيديو جديد يحتفظ بنفس: الإضاءة، الزاوية، الخلفية، الأسلوب، المود، تدرج الألوان - لكن مع الخاتم الجديد.
+
+الصيغة:
+## VIDEO ANALYSIS
+[تحليل مفصل]
+
+## PROFESSIONAL AI VIDEO PROMPT (English)
+[البرومبت بالانجليزي جاهز للنسخ في Runway/Kling]
+
+## البرومبت بالعربي
+[نفس البرومبت بالعربي]`}
+        ]}]
+      })
+    });
+    const d=await res.json();
+    const t=d.content?.map(x=>x.text||'').join('\n')||'';
+    const em=t.match(/## PROFESSIONAL AI VIDEO PROMPT.*?\n([\s\S]*?)(?=## البرومبت|$)/);
+    const am=t.match(/## البرومبت بالعربي\n([\s\S]*?)$/);
+    const analysis=t.replace(/## PROFESSIONAL[\s\S]*$/,'').trim();
+    const ep=em?em[1].trim():'';
+    arabicPrompt=am?am[1].trim():'';
+    document.getElementById('analysisBox').textContent=analysis||t;
+    document.getElementById('promptBox').textContent=ep||t;
+    document.getElementById('resultSection').style.display='block';
+    document.getElementById('resultSection').scrollIntoView({behavior:'smooth'});
+  }catch(e){alert('خطأ: '+e.message);}
+  finally{
+    document.getElementById('loadingDiv').style.display='none';
+    document.getElementById('genBtn').disabled=false;
+  }
+}
+function copyText(id,arabic=false){
+  const t=arabic&&arabicPrompt?arabicPrompt:document.getElementById(id).textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const toast=document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),2000);
+  });
+}
+</script>
+</body>
+</html>
